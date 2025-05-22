@@ -6,6 +6,5 @@ export const MAX_ATTEMPTS = 3;
 export const DETECTOR_CONFIGS = {
     dataMatrix: { formats: ["data_matrix"] },
     qrCode: { formats: ["qr_code"] },
-    gtin: { formats: ["ean_13", "ean_8", "upc_a", "upc_e"] },
-    others: {}
+    gtin: { formats: ["ean_13", "ean_8", "upc_a", "upc_e"] }
 };
