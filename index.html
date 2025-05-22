@@ -1,50 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barcode Detection Demo</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/camera.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enhanced Barcode Scanner</title>
+<style>
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 100%;
+    margin: 0;
+    padding: 15px;
+    background-color: #f5f5f5;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.video-container {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+#video {
+    width: 100%;
+    border-radius: 8px;
+    border: 2px solid #e0e0e0;
+}
+
+.detection-results {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+@media (min-width: 768px) {
+    .detection-results {
+        flex-direction: row;
+    }
+}
+
+.detection-box {
+    flex: 1;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    min-height: 100px;
+}
+
+.current-detection {
+    background: #e8f5e9;  /* Light green background */
+    border-color: #a5d6a7;
+}
+
+.attempt-box {
+    background: #f3e5f5;  /* Light purple background */
+    border-color: #ce93d8;
+}
+
+.detection-results, .attempts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+@media (min-width: 768px) {
+    .detection-results {
+        max-width: 100%;
+    }
+}
+
+@media (min-width: 768px) {
+    body {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .attempts-container {
+        flex-direction: row;
+    }
+
+    .video-container {
+        max-width: 640px;
+    }
+}
+
+.success-box {
+    margin-top: 20px;
+    padding: 20px;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 6px;
+    display: none;
+}
+
+.success-link {
+    word-break: break-all;
+    color: #0056b3;
+    text-decoration: none;
+}
+
+.success-link:hover {
+    text-decoration: underline;
+}
+
+.controls {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+.type-badge.az-code { background: #e3f2fd; color: #1565c0; }
+.type-badge.sgtin { background: #f3e5f5; color: #7b1fa2; }
+.type-badge.lgtin { background: #e8f5e9; color: #2e7d32; }
+.type-badge.gtin { background: #fff3e0; color: #ef6c00; }
+.type-badge.unknown { background: #f5f5f5; color: #757575; }
+</style>
 </head>
 <body>
 <div class="container">
-    <h1>Barcode Detection Demo</h1>
-
-    <div>
-        <h2>Supported Formats:</h2>
-        <div id="supportedFormats" class="results"></div>
-    </div>
-
-    <div>
-        <h2>Camera Feed</h2>
+    <div class="card">
+        <h1>Enhanced Barcode Scanner</h1>
+        
         <div class="video-container">
             <video id="video" autoplay playsinline></video>
         </div>
+        
         <div class="controls">
             <button id="startCamera">Start Camera</button>
             <button id="stopCamera">Stop Camera</button>
         </div>
-        <div class="camera-results">
-            <div id="currentBatch" class="result-box current-batch"></div>
-            <div id="attempt1" class="result-box attempt-box"></div>
-            <div id="attempt2" class="result-box attempt-box"></div>
-            <div id="attempt3" class="result-box attempt-box"></div>
-        </div>
-        <div id="actionButtons" class="action-buttons">
-            <button id="redirectButton" class="redirect-button">Go to Product</button>
-            <a id="redirectLink" class="redirect-link" href="#"></a>
-        </div>
-    </div>
 
-    <div>
-        <h2>Image Upload</h2>
-        <input type="file" id="imageInput" accept="image/*">
-        <img id="imagePreview" style="display: none;">
-        <div class="results" id="imageResults"></div>
-        <div id="imageActionButtons" class="action-buttons">
-            <button id="imageRedirectButton" class="redirect-button">Go to Product</button>
-            <a id="imageRedirectLink" class="redirect-link" href="#"></a>
+        <div class="detection-results">
+            <div class="detection-box current-detection">
+                <h3>Current Scan</h3>
+                <div id="currentScan">
+                    <strong>GTIN:</strong> <span id="gtinResults">No GTIN detected</span><br>
+                    <strong>Other Codes:</strong> <span id="otherResults">No other codes detected</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="attempts-container">
+            <div class="detection-box attempt-box">
+                <h3>Attempt 1</h3>
+                <div id="attempt1"></div>
+            </div>
+            <div class="detection-box attempt-box">
+                <h3>Attempt 2</h3>
+                <div id="attempt2"></div>
+            </div>
+        </div>
+
+        <div id="successBox" class="success-box">
+            <h3>Detection Complete</h3>
+            <div id="redirectLinks"></div>
         </div>
     </div>
 </div>
@@ -52,21 +199,451 @@
 <!-- Register barcode detector polyfill -->
 <script type="module" src="https://fastly.jsdelivr.net/npm/barcode-detector@3/dist/es/polyfill.min.js"></script>
 
-<!-- Main script -->
 <script type="module">
-    // Wait for polyfill to load
-    await new Promise(resolve => setTimeout(resolve, 1000));
+// Function to pad gtin
+function padGtin(gtin) {
+    return gtin.toString().padStart(14, '0');
+}
+
+// Mock valid codes database
+const VALID_CODES = {
+    '00195515043557': {
+        sgtin: {
+            type: 'SGTIN',
+            serials: new Set(['SERIAL123', 'SERIAL456'])
+        },
+        lgtin: {
+            type: 'LGTIN',
+            serials: new Set(['LOT789', 'LOT012'])
+        }
+    },
+    '00614141453245': {
+        sgtin: {
+            type: 'SGTIN',
+            serials: new Set(['SER001', 'SER002'])
+        },
+        lgtin: {
+            type: 'LGTIN',
+            serials: new Set(['LOT123WA', 'LOT456XB'])
+        }
+    },
+    '00887276668703': {
+        sgtin: {
+            type: 'SGTIN',
+            serials: new Set(['RFAW825P4ZW'])
+        },
+        lgtin: {
+            type: 'LGTIN',
+            serials: new Set(['RF2W80MX6AE'])
+        }
+    },
+};
+
+
+// Mock API call function
+async function mockFilterGtinSerials(gtin, serials) {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const paddedGtin = padGtin(gtin);
+    const validData = VALID_CODES[paddedGtin];
+    if (!validData) return { gtinSerials: [] };
+
+    // Check both SGTIN and LGTIN possibilities
+    let matchingSerials = [];
+    let matchType = null;
+
+    // Check SGTIN
+    if (validData.sgtin) {
+        const sgtinMatches = serials
+            .filter(serial => validData.sgtin.serials.has(serial))
+            .map(serial => `01${paddedGtin}21${serial}`);
+        
+        if (sgtinMatches.length > 0) {
+            matchingSerials = sgtinMatches;
+            matchType = validData.sgtin.type;
+        }
+    }
+
+    // If no SGTIN matches, check LGTIN
+    if (matchingSerials.length === 0 && validData.lgtin) {
+        const lgtinMatches = serials
+            .filter(serial => validData.lgtin.serials.has(serial))
+            .map(serial => `01${paddedGtin}10${serial}`);
+        
+        if (lgtinMatches.length > 0) {
+            matchingSerials = lgtinMatches;
+            matchType = validData.lgtin.type;
+        }
+    }
+
+    return { 
+        gtinSerials: matchingSerials,
+        type: matchType
+    };
+}
+
+// Function to generate redirect URL based on code type and value
+function generateRedirectUrl(code, type) {
+    const baseUrl = 'https://transparency.amazon.com';
     
-    import { initializeBarcodeDetector } from './js/initialize.js';
-    import { startCamera, stopCamera } from './js/camera-handler.js';
-    import { handleImageUpload } from './js/image-handler.js';
+    switch(type) {
+        case DetectedCodeType.AZ_CODE:
+            return `${baseUrl}/transparency/items?id=${code}&language=en&country=US&deviceLocale=en_US&ref=tpncy_alp_tapp_abaex#`;
+        
+        case DetectedCodeType.SGTIN: {
+            const match = code.match(/01(\d{14})21(\w+)/);
+            if (match) {
+                const [, gtin, serial] = match;
+                return `${baseUrl}/01/${padGtin(gtin)}/21/${serial}`;
+            }
+            break;
+        }
+        
+        case DetectedCodeType.LGTIN: {
+            const match = code.match(/01(\d{14})10(\w+)/);
+            if (match) {
+                const [, gtin, lotNumber] = match;
+                return `${baseUrl}/01/${padGtin(gtin)}/10/${lotNumber}`;
+            }
+            break;
+        }
+    }
     
-    document.addEventListener('DOMContentLoaded', () => {
-        initializeBarcodeDetector();
-        document.getElementById('startCamera').addEventListener('click', startCamera);
-        document.getElementById('stopCamera').addEventListener('click', stopCamera);
-        document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+    return `${baseUrl}/transparency/items?id=${code}`; // fallback
+}
+
+// Enums and Constants
+const DetectedCodeType = {
+    AZ_CODE: 'AZ_CODE',
+    SGTIN: 'SGTIN',
+    LGTIN: 'LGTIN',
+    GTIN: 'GTIN',
+    UNKNOWN: 'UNKNOWN'
+};
+
+// Format validation constants
+const AZ_CODE_REGEX = /^(?<azcode>AZ:\w{26})/;
+const SGTIN_REGEX = /^(?<sgtin>01\d{14}21\w{1,20})/;
+const LGTIN_REGEX = /^(?<lgtin>01\d{14}10\w{1,20})/;
+const GS1_SMARTLINK_DOMAIN_REGEX = /(amazon\.com|transparency\.com)/;
+const GS1_SMARTLINK_SGTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})\/21\/(?<serial>\w{1,20})/;
+const GS1_SMARTLINK_LGTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})\/10\/(?<lotNumber>\w{1,20})/;
+const GS1_SMARTLINK_GTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})/;
+
+// Detection intervals
+const DETECTION_INTERVAL = 200;
+const BATCH_INTERVAL = 3000;
+const MAX_BATCH_ATTEMPTS = 3;
+
+// Utility functions
+const formatSGTIN = (gtin, serial) => `01${gtin.padStart(14, '0')}21${serial}`;
+const formatLGTIN = (gtin, lotNumber) => `01${gtin.padStart(14, '0')}10${lotNumber}`;
+
+const validateDataMatrix = (rawCodeDetected) => {
+    const azCodeMatch = rawCodeDetected.match(AZ_CODE_REGEX);
+    if (azCodeMatch?.groups) {
+        const { azcode } = azCodeMatch.groups;
+        return { isValid: true, code: azcode, type: DetectedCodeType.AZ_CODE };
+    }
+    const sgtinMatch = rawCodeDetected.match(SGTIN_REGEX);
+    if (sgtinMatch?.groups) {
+        const { sgtin } = sgtinMatch.groups;
+        return { isValid: true, code: sgtin, type: DetectedCodeType.SGTIN };
+    }
+    const lgtinMatch = rawCodeDetected.match(LGTIN_REGEX);
+    if (lgtinMatch?.groups) {
+        const { lgtin } = lgtinMatch.groups;
+        return { isValid: true, code: lgtin, type: DetectedCodeType.LGTIN };
+    }
+    return { isValid: false, code: rawCodeDetected, type: DetectedCodeType.UNKNOWN };
+};
+
+const validateQRCode = (rawCodeDetected) => {
+    try {
+        const url = new URL(rawCodeDetected);
+        if (GS1_SMARTLINK_DOMAIN_REGEX.test(url.origin)) {
+            const sgtinPathMatch = rawCodeDetected.match(GS1_SMARTLINK_SGTIN_PATH_REGEX);
+            if (sgtinPathMatch?.groups) {
+                const { gtin, serial } = sgtinPathMatch.groups;
+                return { isValid: true, code: formatSGTIN(gtin, serial), type: DetectedCodeType.SGTIN };
+            }
+            const lgtinPathMatch = rawCodeDetected.match(GS1_SMARTLINK_LGTIN_PATH_REGEX);
+            if (lgtinPathMatch?.groups) {
+                const { gtin, lotNumber } = lgtinPathMatch.groups;
+                return { isValid: true, code: formatLGTIN(gtin, lotNumber), type: DetectedCodeType.LGTIN };
+            }
+            const gtinPathMatch = rawCodeDetected.match(GS1_SMARTLINK_GTIN_PATH_REGEX);
+            if (gtinPathMatch?.groups) {
+                const { gtin } = gtinPathMatch.groups;
+                return { isValid: true, code: gtin, type: DetectedCodeType.GTIN };
+            }
+        }
+    } catch (e) {
+        return validateDataMatrix(rawCodeDetected);
+    }
+    return { isValid: false, code: rawCodeDetected, type: DetectedCodeType.UNKNOWN };
+};
+
+// State and Elements
+const video = document.getElementById('video');
+const gtinResultsDiv = document.getElementById('gtinResults');
+const otherResultsDiv = document.getElementById('otherResults');
+const startCameraButton = document.getElementById('startCamera');
+const stopCameraButton = document.getElementById('stopCamera');
+const successBox = document.getElementById('successBox');
+const redirectLinks = document.getElementById('redirectLinks');
+
+let stream = null;
+let isActive = true;
+let animationFrame = null;
+let detectionInterval = null;
+let batchInterval = null;
+let detectedGtin = null;
+let detectedUnknownCodes = new Set();
+let batchAttempts = 0;
+
+// Create type badge helper
+function createTypeBadge(type) {
+    return `<span class="type-badge ${type.toLowerCase()}">${type}</span>`;
+}
+
+// Cleanup functictions
+function cleanUpTempData() {
+    console.log('cleanUpTempData called...');
+    detectedGtin = null;
+    detectedUnknownCodes.clear();
+    batchAttempts = 0;
+    
+    // Clear all result displays
+    gtinResultsDiv.textContent = 'No GTIN detected';
+    otherResultsDiv.textContent = 'No other codes detected';
+    document.querySelectorAll('.attempt-box div').forEach(div => {
+        div.textContent = '';
     });
+    updateResults();
+}
+
+function fullCleanUp() {
+    console.log('fullCleanUp called...');
+    isActive = false;
+    if (animationFrame !== null) {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = null;
+    }
+    if (video) {
+        video.pause();
+        video.srcObject = null;
+    }
+    if (detectionInterval !== null) {
+        clearTimeout(detectionInterval);
+    }
+    if (batchInterval !== null) {
+        clearInterval(batchInterval);
+    }
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    cleanUpTempData();
+}
+
+// Success handlers
+function handleSuccessfulDetection(code, type) {
+    fullCleanUp();
+    const redirectUrl = generateRedirectUrl(code, type);
+    successBox.style.display = 'block';
+    redirectLinks.innerHTML = `
+        ${createTypeBadge(type)}
+        <p><strong>Detected Code:</strong> ${code}</p>
+        <p><strong>Redirect Link:</strong><br>
+        <a href="${redirectUrl}" target="_blank" class="success-link">${redirectUrl}</a></p>
+        <button onclick="window.open('${redirectUrl}', '_blank')" class="proceed-button">
+            Open Link
+        </button>
+    `;
+}
+
+function handleDetectionTimeoutWithGtin(gtin, detectedUnknownCodes) {
+    fullCleanUp();
+    successBox.style.display = 'block';
+    redirectLinks.innerHTML = `
+        ${createTypeBadge(DetectedCodeType.GTIN)}
+        <p><strong>Detected GTIN:</strong> ${gtin}</p>
+        <p><strong>No valid serial found after ${MAX_BATCH_ATTEMPTS} attempts</strong></p>
+        <p><strong>Serials:</strong> ${[...detectedUnknownCodes]}</p>
+    `;
+}
+
+// Update UI
+function updateResults() {
+    // Update current detection box
+    const gtinResult = detectedGtin ? 
+        `${createTypeBadge(DetectedCodeType.GTIN)}${detectedGtin}` : 
+        'None';
+    
+    const otherCodesResult = detectedUnknownCodes.size > 0 ? 
+        Array.from(detectedUnknownCodes)
+            .map(code => `${createTypeBadge(DetectedCodeType.UNKNOWN)}${code}`)
+            .join(', ') : 
+        'None';
+
+    document.getElementById('gtinResults').innerHTML = gtinResult;
+    document.getElementById('otherResults').innerHTML = otherCodesResult;
+
+    // Update attempt boxes
+    for (let i = 1; i <= MAX_BATCH_ATTEMPTS; i++) {
+        const attemptDiv = document.getElementById(`attempt${i}`);
+        if (attemptDiv) {
+            if (i <= batchAttempts) {
+                attemptDiv.innerHTML = `
+                    <strong>GTIN:</strong> ${gtinResult}<br>
+                    <strong>Other Codes:</strong> ${otherCodesResult}
+                `;
+            } else {
+                attemptDiv.innerHTML = '<em>Waiting for next scan...</em>';
+            }
+        }
+    }
+}
+
+
+// Camera handling
+async function startCamera() {
+    isActive = true;
+    batchAttempts = 0;
+    detectedGtin = null;
+    detectedUnknownCodes.clear();
+    successBox.style.display = 'none';
+    document.querySelectorAll('.attempt-box div').forEach(div => div.textContent = '');
+    updateResults();
+
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        });
+        video.srcObject = stream;
+        startDetection();
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+    }
+}
+
+// Detection logic
+async function startDetection() {
+    const barcodeDetector = new BarcodeDetector();
+
+    async function detectBarcode() {
+        if (!isActive || video.readyState !== video.HAVE_ENOUGH_DATA) {
+            detectionInterval = setTimeout(() => {
+                animationFrame = requestAnimationFrame(detectBarcode);
+            }, DETECTION_INTERVAL);
+            return;
+        }
+
+        try {
+            const barcodes = await barcodeDetector.detect(video);
+            for (const barcode of barcodes) {
+                const code = barcode.rawValue;
+                
+                // Skip if already processed
+                if (detectedGtin === code || detectedUnknownCodes.has(code)) {
+                    continue;
+                }
+
+                // First check for AZ codes and QR codes
+                if (barcode.format === 'data_matrix') {
+                    const result = validateDataMatrix(code);
+                    if (result.isValid) {
+                        handleSuccessfulDetection(result.code, result.type);
+                        return;
+                    }
+                } else if (barcode.format === 'qr_code') {
+                    const result = validateQRCode(code);
+                    if (result.isValid) {
+                        handleSuccessfulDetection(result.code, result.type);
+                        return;
+                    }
+                }
+
+                // If not AZ code or valid QR code, check for GTIN/serial
+                if (['ean_13', 'ean_8', 'upc_a', 'upc_e'].includes(barcode.format)) {
+                    console.log(`update gtin: ${code}`);
+                    detectedGtin = padGtin(code); // Pad GTIN when storing
+                } else {
+                    console.log(`add serial: ${code}`);
+                    detectedUnknownCodes.add(code);
+                }
+            }
+
+            updateResults();
+
+            detectionInterval = setTimeout(() => {
+                animationFrame = requestAnimationFrame(detectBarcode);
+            }, DETECTION_INTERVAL);
+        } catch (error) {
+            console.error('Barcode detection error:', error);
+            if (isActive) {
+                detectionInterval = setTimeout(() => {
+                    animationFrame = requestAnimationFrame(detectBarcode);
+                }, DETECTION_INTERVAL);
+            }
+        }
+    }
+
+    async function processBatch() {
+        if (!isActive) return;
+
+        try {
+            console.log(`processBatchGtin: ${detectedGtin}`);
+            console.log(`processBatchUnknownCodes: ${[...detectedUnknownCodes]}`);
+            
+            batchAttempts++;
+            updateResults();
+
+            if (detectedGtin && detectedUnknownCodes.size > 0) {
+                try {
+                    const response = await mockFilterGtinSerials(
+                        detectedGtin, 
+                        Array.from(detectedUnknownCodes)
+                    );
+
+                    if (!isActive) return;
+
+                    if (response?.gtinSerials?.length > 0) {
+                        handleSuccessfulDetection(response.gtinSerials[0], response.type);
+                        return;
+                    }
+                } catch (error) {
+                    console.error(`Failed to process GTIN: ${detectedGtin}`, error);
+                }
+            }
+
+            console.log(`attempts: ${batchAttempts}`);
+            if (batchAttempts >= MAX_BATCH_ATTEMPTS) {
+                console.log('MAX_BATCH_ATTEMPTS...');
+                if (detectedGtin) {
+                    handleDetectionTimeoutWithGtin(detectedGtin, detectedUnknownCodes);
+                } else {
+                    cleanUpTempData();
+                }
+                return;
+            }
+        } catch (error) {
+            console.error('Batch processing error:', error);
+        }
+    }
+
+    video.play().then(() => {
+        animationFrame = requestAnimationFrame(detectBarcode);
+        batchInterval = setInterval(processBatch, BATCH_INTERVAL);
+    }).catch((error) => {
+        console.error('Failed to start video playback:', error);
+    });
+}
+
+// Event listeners
+startCameraButton.addEventListener('click', startCamera);
+stopCameraButton.addEventListener('click', fullCleanUp);
 </script>
 </body>
 </html>
