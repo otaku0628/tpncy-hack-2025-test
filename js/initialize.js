@@ -1,20 +1,5 @@
 // js/initialize.js
 export async function initializeBarcodeDetector() {
-    const supportedFormats = [
-        'data_matrix',
-        'qr_code',
-        'ean_13',
-        'ean_8',
-        'upc_a',
-        'upc_e',
-        'code_128',
-        'code_39',
-        'code_93',
-        'codabar',
-        'databar',
-        'databar_expanded',
-        'itf'
-    ];
 
     try {
         // Wait for polyfill to load
@@ -24,7 +9,7 @@ export async function initializeBarcodeDetector() {
         try {
             formats = await BarcodeDetector.getSupportedFormats();
         } catch (e) {
-            formatmats = supportedFormats;
+            console.error('Initialization error:', error);
         }
 
         const supportedFormatsDiv = document.getElementById('supportedFormats');
