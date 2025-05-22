@@ -16,7 +16,7 @@ const LGTIN_REGEX = /^(?<lgtin>01\d{14}10\w{1,20})/;
 const GS1_SMARTLINK_DOMAIN_REGEX = /(amazon\.com|transparency\.com)/;
 const GS1_SMARTLINK_SGTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})\/21\/(?<serial>\w{1,20})/;
 const GS1_SMARTLINK_LGTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})\/10\/(?<lotNumber>\w{1,20})/;
-const GS1_SMARTLINK_GTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})/})/;
+const GS1_SMARTLINK_GTIN_PATH_REGEX = /\/01\/(?<gtin>\d{14})/;
 
 /**
  * Formats a GTIN and serial into an SGTIN element string
