@@ -1,36 +1,19 @@
-// js/initialize.js
+import { DETECTOR_CONFIGS } from './constants.js';
+
 export async function initializeBarcodeDetector() {
-
     try {
-        // Wait for polyfill to load
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const formats = Object.values(DETECTOR_CONFIGS)
+            .flatMap(config => config.formats)
+            .filter(Boolean);
+            
+        const barcodeDetector = new BarcodeDetector({ formats });
+        const supportedFormats = await BarcodeDetector.getSupportedFormats();
         
-        let formats;
-        try {
-            formats = await BarcodeDetector.getSupportedFormats();
-        } catch (e) {
-            console.error('Initialization error:', error);
-        }
-
-        const supportedFormatsDiv = document.getElementById('supportedFormats');
-        
-        if (formats && formats.length > 0) {
-            supportedFormatsDiv.innerHTML = `
-                <h3>Native Support:</h3>
-                <div class="format-list">${formats.join(', ')}</div>
-            `;
-        } else {
-            supportedFormatsDiv.innerHTML = `
-                <h3>Polyfill Support:</h3>
-                <div class="format-list">${supportedFormats.join(', ')}</div>
-                <div class="note">(Using barcode-detector polyfill)</div>
-            `;
-        }
+        document.getElementById('supportedFormats').textContent = 
+            `Supported formats: ${supportedFormats.join(', ')}`;
     } catch (error) {
-        console.error('Initialization error:', error);
-        document.getElementById('supportedFormats').innerHTML = `
-            <div class="error">Error initializing barcode detector. Using polyfill.</div>
-            <div class="format-list">${supportedFormats.join(', ')}</div>
-        `;
+        console.error('Barcode Detection failed to initialize:', error);
+        document.getElementById('supportedFormats').textContent = 
+            'Barcode Detection not supported in this browser.';
     }
 }
