@@ -208,23 +208,9 @@ function padGtin(gtin) {
 // Mock valid codes database
 const VALID_CODES = {
     '00195515043557': {
-        sgtin: {
-            type: 'SGTIN',
-            serials: new Set(['SERIAL123', 'SERIAL456'])
-        },
         lgtin: {
             type: 'LGTIN',
-            serials: new Set(['LOT789', 'LOT012'])
-        }
-    },
-    '00614141453245': {
-        sgtin: {
-            type: 'SGTIN',
-            serials: new Set(['SER001', 'SER002'])
-        },
-        lgtin: {
-            type: 'LGTIN',
-            serials: new Set(['LOT123WA', 'LOT456XB'])
+            serials: new Set(['LOT123WA'])
         }
     },
     '00887276668703': {
@@ -235,6 +221,12 @@ const VALID_CODES = {
         lgtin: {
             type: 'LGTIN',
             serials: new Set(['RF2W80MX6AE'])
+        }
+    },
+    '00868361000387': {
+        sgtin: {
+            type: 'SGTIN',
+            serials: new Set(['X002H7CUYT'])
         }
     },
 };
