@@ -1,6 +1,6 @@
 // js/camera-handler.js
 import { SCAN_INTERVAL, BATCH_INTERVAL, MAX_ATTEMPTS, DETECTOR_CONFIGS } from './constants.js';
-import { validateDataMatrix, validateQRCode, extractGTIN, extractSerial } from './validators.js';
+import { validateDataMatrix, validateQRCode } from './validators.js';
 import { mockFilterGtinSerials } from '../mock/valid-codes.js';
 
 let stream = null;
@@ -10,173 +10,148 @@ let detectedGtins = new Set();
 let detectedCodes = new Set();
 let batchAttempts = 0;
 
-const detectors = {
+// Initialize detectors as null
+let detectors = {
     dataMatrix: null,
     qrCode: null,
     gtin: null,
     others: null
 };
 
-export async function initializeDetectors() {
+// Initialize detectors before using them
+async function initializeDetectors() {
     try {
-        const formats = await BarcodeDetector.getSupportedFormats();
-        console.log('Supported formats:', formats);
-
-        detectors.dataMatrix = new BarcodeDetector(DETECTOR_CONFIGS.dataMatrix);
-        detectors.qrCode = new BarcodeDetector(DETECTOR_CONFIGS.qrCode);
-        detectors.gtin = new BarcodeDetector(DETECTOR_CONFIGS.gtin);
-        detectors.others = new BarcodeDetector(DETECTOR_CONFIGS.others);
+        detectors = {
+            dataMatrix: new BarcodeDetector(DETECTOR_CONFIGS.dataMatrix),
+            qrCode: new BarcodeDetector(DETECTOR_CONFIGS.qrCode),
+            gtin: new BarcodeDetector(DETECTOR_CONFIGS.gtin),
+            others: new BarcodeDetector(DETECTOR_CONFIGS.others)
+        };
+        return true;
     } catch (error) {
         console.error('Error initializing detectors:', error);
+        return false;
     }
+}
+
+function resetState() {
+    if (scanTimeout) clearTimeout(scanTimeout);
+    if (batchTimeout) clearTimeout(batchTimeout);
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    detectedGtins.clear();
+    detectedCodes.clear();
+    batchAttempts = 0;
 }
 
 export async function startCamera() {
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        // Initialize detectors first
+        const initialized = await initializeDetectors();
+        if (!initialized) {
+            throw new Error('Failed to initialize barcode detectors');
+        }
+
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+        });
+        
         const video = document.getElementById('video');
         video.srcObject = stream;
         await video.play();
+
         startDetection();
     } catch (error) {
         console.error('Error starting camera:', error);
+        const cameraResults = document.getElementById('cameraResults');
+        cameraResults.textContent = 'Error: ' + error.message;
     }
 }
 
 export function stopCamera() {
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-    if (scanTimeout) clearTimeout(scanTimeout);
-    if (batchTimeout) clearTimeout(batchTimeout);
     resetState();
-}
-
-function resetState() {
-    detectedGtins.clear();
-    detectedCodes.clear();
-    batchAttempts = 0;
-    updateUI();
-}
-
-function startDetection() {
-    scanTimeout = setTimeout(detectCodes, SCAN_INTERVAL);
-    batchTimeout = setTimeout(processBatch, BATCH_INTERVAL);
+    const video = document.getElementById('video');
+    if (video) {
+        video.srcObject = null;
+    }
 }
 
 async function detectCodes() {
     const video = document.getElementById('video');
+    if (!video || !detectors.dataMatrix) {
+        console.error('Video element or detectors not ready');
+        return;
+    }
+
     try {
-        const [dataMatrixCodes, qrCodes, gtinCodes, otherCodes] = await Promise.all([
+        // Check if video is ready
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+            scanTimeout = setTimeout(detectCodes, SCAN_INTERVAL);
+            return;
+        }
+
+        const results = await Promise.all([
             detectors.dataMatrix.detect(video),
             detectors.qrCode.detect(video),
             detectors.gtin.detect(video),
             detectors.others.detect(video)
         ]);
 
-        processDetectedCodes([...dataMatrixCodes, ...qrCodes, ...gtinCodes, ...otherCodes]);
+        const allCodes = results.flat();
+        processDetectedCodes(allCodes);
+
     } catch (error) {
         console.error('Error detecting codes:', error);
     }
 
-    scanTimeout = setTimeout(detectCodes, SCAN_INTERVAL);
+    // Schedule next detection only if we still have an active stream
+    if (stream) {
+        scanTimeout = setTimeout(detectCodes, SCAN_INTERVAL);
+    }
 }
 
 function processDetectedCodes(codes) {
-    for (const code of codes) {
-        let result = validateDataMatrix(code.rawValue);
-        if (!result.isValid) {
-            result = validateQRCode(code.rawValue);
-        }
-
-        if (result.isValid) {
-            const gtin = extractGTIN(result.code);
-            if (gtin) detectedGtins.add(gtin);
-            detectedCodes.add(result.code);
-        } else {
+    const cameraResults = document.getElementById('cameraResults');
+    
+    codes.forEach(code => {
+        if (!detectedCodes.has(code.rawValue)) {
             detectedCodes.add(code.rawValue);
+            
+            if (code.format.includes('ean') || code.format.includes('upc')) {
+                detectedGtins.add(code.rawValue);
+            }
         }
-    }
+    });
 
-    updateUI();
-}
-
-async function processBatch() {
-    if (detectedCodes.size === 0) {
-        batchTimeout = setTimeout(processBatch, BATCH_INTERVAL);
-        return;
-    }
-
-    const gtins = Array.from(detectedGtins);
-    const serials = Array.from(detectedCodes).map(code => extractSerial(code) || code);
-
-    let validCodeFound = false;
-    for (const gtin of gtins) {
-        const result = mockFilterGtinSerials(gtin, serials);
-        if (result.gtinSerials.length > 0) {
-            onTpncyCodeDetected(result.gtinSerials[0]);
-            validCodeFound = true;
-            break;
-        }
-    }
-
-    if (!validCodeFound) {
-        batchAttempts++;
-        if (batchAttempts >= MAX_ATTEMPTS) {
-            onDetectionTimeout(detectedGtins, detectedCodes);
-        } else {
-            updateUI();
-            batchTimeout = setTimeout(processBatch, BATCH_INTERVAL);
-        }
+    if (detectedCodes.size > 0) {
+        updateUI();
     }
 }
 
 function updateUI() {
-    const currentBatchEl = document.getElementById('currentBatch');
-    currentBatchEl.textContent = Array.from(detectedCodes).join(', ');
-
-    for (let i = 1; i <= MAX_ATTEMPTS; i++) {
-        const attemptEl = document.getElementById(`attempt${i}`);
-        if (i <= batchAttempts) {
-            attemptEl.textContent = `Attempt ${i}: No valid codes found`;
-            attemptEl.classList.add('active');
-        } else {
-            attemptEl.textContent = '';
-            attemptEl.classList.remove('active');
-        }
-    }
+    const cameraResults = document.getElementById('cameraResults');
+    const currentBatch = Array.from(detectedCodes).map(code => 
+        `Format: ${code.format || 'unknown'}, Value: ${code}`
+    ).join('\n');
+    
+    cameraResults.textContent = currentBatch;
 }
 
-function onTpncyCodeDetected(code) {
-    stopCamera();
-    const actionButtons = document.getElementById('actionButtons');
-    actionButtons.classList.add('visible');
-    const redirectButton = document.getElementById('redirectButton');
-    const redirectLink = document.getElementById('redirectLink');
-    redirectButton.onclick = () => window.location.href = `/product/${encodeURIComponent(code)}`;
-    redirectLink.href = `/product/${encodeURIComponent(code)}`;
-    redirectLink.textContent = `/product/${code}`;
-}
-
-function onDetectionTimeout(gtins, unknownCodes) {
-    stopCamera();
-    const actionButtons = document.getElementById('actionButtons');
-    actionButtons.classList.add('visible');
-    const redirectButton = document.getElementById('redirectButton');
-    const redirectLink = document.getElementById('redirectLink');
-
-    if (gtins.size > 0) {
-        console.log(`Redirect To GTIN Landing Page..., GTINs: ${Array.from(gtins)}`);
-        redirectButton.onclick = () => window.location.href = '/gtin-landing';
-        redirectLink.href = '/gtin-landing';
-        redirectLink.textContent = 'GTIN Landing Page';
-    } else {
-        console.log(`Redirect To Timeout Page..., Codes: ${Array.from(unknownCodes)}`);
-        redirectButton.onclick = () => window.location.href = '/timeout';
-        redirectLink.href = '/timeout';
-        redirectLink.textContent = 'Timeout Page';
-    }
+function startDetection() {
+    detectCodes();
+    batchTimeout = setInterval(() => {
+        // Process batch here if needed
+        detectedCodes.clear();
+        detectedGtins.clear();
+        updateUI();
+    }, BATCH_INTERVAL);
 }
 
 // Initialize detectors when the script loads
-initializeDetectors();
+initializeDetectors().then(success => {
+    if (!success) {
+        console.warn('Barcode detection might not work properly');
+    }
+});
