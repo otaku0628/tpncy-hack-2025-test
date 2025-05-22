@@ -38,7 +38,7 @@ export function formatLGTIN(gtin, lotNumber) {
  * @returns {{isValid: boolean, code: string, type: string}} Validation result
  */
 export function validateDataMatrix(rawCodeDetected) {
-    const azCodeMatch = rawrawCodeDetected.match(AZ_CODE_REGEX);
+    const azCodeMatch = rawCodeDetected.match(AZ_CODE_REGEX);
     if (azCodeMatch?.groups) {
         const { azcode } = azCodeMatch.groups;
         return { isValid: true, code: azcode, type: DetectedCodeType.AZ_CODE };
