@@ -7,10 +7,5 @@ export const DETECTOR_CONFIGS = {
     dataMatrix: { formats: ["data_matrix"] },
     qrCode: { formats: ["qr_code"] },
     gtin: { formats: ["ean_13", "ean_8", "upc_a", "upc_e"] },
-    others: {
-        formats: [
-            "codabar", "code_39", "code_93", "code_128",
-            "databar", "databar_limited", "databar_expanded"
-        ]
-    }
+    others: { formats: ["any"] }
 };
