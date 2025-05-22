@@ -1,58 +1,18 @@
-/* css/camera.css */
+.video-container {
+    width: 100%;
+    max-width: 640px;
+    margin: 20px auto;
+}
+
+video {
+    width: 100%;
+    height: auto;
+}
+
+.controls {
+    margin: 10px 0;
+}
+
 .camera-results {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin: 20px 0;
-}
-
-.result-box {
-    border: 1px solid #ccc;
-    padding: 10px;
-    border-radius: 4px;
-    min-height: 150px;
-}
-
-.current-batch {
-    grid-column: 1 / -1;
-    background: #f0f0f0;
-}
-
-.attempt-box {
-    background: #fff;
-    opacity: 0.6;
-    transition: all 0.3s ease;
-}
-
-.attempt-box.active {
-    opacity: 1;
-    background: #f9f9f9;
-}
-
-.action-buttons {
     margin-top: 20px;
-    padding: 10px;
-    background: #f0f0f0;
-    border-radius: 4px;
-    display: none;
-}
-
-.action-buttons.visible {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.redirect-button {
-    padding: 8px 16px;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.redirect-link {
-    color: #007bff;
-    text-decoration: none;
 }
