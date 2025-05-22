@@ -6,6 +6,28 @@
     <title>Barcode Detection Demo</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/camera.css">
+    <style>
+        /* Add these styles for better format display */
+        .format-list {
+            font-family: monospace;
+            line-height: 1.5;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+
+        .note {
+            font-style: italic;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .error {
+            color: #dc3545;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
@@ -52,13 +74,19 @@
 <!-- Register barcode detector polyfill -->
 <script type="module" src="https://fastly.jsdelivr.net/npm/barcode-detector@3/dist/es/polyfill.min.js"></script>
 
+<!-- Main script -->
 <script type="module">
+    import { initializeBarcodeDetector } from './js/initialize.js';
     import { startCamera, stopCamera } from './js/camera-handler.js';
     import { handleImageUpload } from './js/image-handler.js';
 
-    document.getElementById('startCamera').addEventListener('click', startCamera);
-    document.getElementById('stopCamera').addEventListener('click', stopCamera);
-    document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeBarcodeDetector();
+        
+        document.getElementById('startCamera').addEventListener('click', startCamera);
+        document.getElementById('stopCamera').addEventListener('click', stopCamera);
+        document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+    });
 </script>
 </body>
 </html>
