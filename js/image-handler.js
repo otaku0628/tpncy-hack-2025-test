@@ -10,7 +10,7 @@ export async function initializeDetectors() {
             dataMatrix: new BarcodeDetector(DETECTOR_CONFIGS.dataMatrix),
             qrCode: new BarcodeDetector(DETECTOR_CONFIGS.qrCode),
             gtin: new BarcodeDetector(DETECTOR_CONFIGS.gtin),
-            others: new BarcodeDetector(DETECTOR_CONFIGS.others)
+            others: new BarcodeDetector()
         };
     } catch (error) {
         console.error('Error initializing detectors:', error);
