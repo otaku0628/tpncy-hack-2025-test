@@ -384,7 +384,7 @@ const validateQRCode = (rawCodeDetected) => {
     } catch (e) {
         return validateDataMatrix(rawCodeDetected);
     }
-    return { isValid: false, code: rawCodeDetected, type: DetectedCodeType.UNKNOWN };
+    return validateDataMatrix(rawCodeDetected);
 };
 
 // State and Elements
