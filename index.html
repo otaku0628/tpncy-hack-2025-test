@@ -53,6 +53,20 @@
 <script type="module" src="https://fastly.jsdelivr.net/npm/barcode-detector@3/dist/es/polyfill.min.js"></script>
 
 <!-- Main script -->
-<script src="js/main.js"></script>
+<script type="module">
+    // Wait for polyfill to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    import { initializeBarcodeDetector } from './js/initialize.js';
+    import { startCamera, stopCamera } from './js/camera-handler.js';
+    import { handleImageUpload } from './js/image-handler.js';
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeBarcodeDetector();
+        document.getElementById('startCamera').addEventListener('click', startCamera);
+        document.getElementById('stopCamera').addEventListener('click', stopCamera);
+        document.getElementById('imageInput').addEventListener('change', handleImageUpload);
+    });
+</script>
 </body>
 </html>
